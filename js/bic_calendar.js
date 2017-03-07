@@ -94,7 +94,7 @@ $.fn.bic_calendar = function(options) {
          */
         function showCalendar() {
 
-            var newEventPane = $('<div id="new_event_pane" class="row" style="display:none;background-color:yellow"></div>');
+            var newSnapshotPane = $('<div id="new_snapshot_pane" class="row" style="display:none;"></div>');
 
             //layer with the days of the month (literals)
             daysMonthsLayer = $('<div id="monthsLayer" class="row" style="height:300px;overflow-y:auto;"></div>');
@@ -144,7 +144,7 @@ $.fn.bic_calendar = function(options) {
             //calendar.append(capaDiasSemana);
             //daysMonthLayer.prepend(capaDiasSemana);
             calendar.append(daysMonthsLayer);
-            calendar.append(newEventPane);
+            calendar.append(newSnapshotPane);
 
             //insert calendar in the document
             elem.append(calendar);
@@ -336,7 +336,7 @@ $.fn.bic_calendar = function(options) {
         }
 
         function validateWritedDate(fecha) {
-            var arrayFecha = fecha.split("/");
+            var arrayFecha = fecha.split(/\D/);
             if (arrayFecha.length != 3)
                 return false;
             return checkDate(arrayFecha[1], arrayFecha[0], arrayFecha[2]);
@@ -375,11 +375,20 @@ $.fn.bic_calendar = function(options) {
          */
         function markEvents(year) {
             for (var i = 0; i < events.length; i++) {
-              if(!events[i].date_to) {
-                events[i].date_to = events[i].date;
-              }
+              if(events[i].type == "rent_payment") {
+                var eventDate = new Date(events[i].date);
+                var eventDiv = $('#bic_calendar_' + eventDate.getFullYear() + '_' + (parseInt(eventDate.getMonth()) + 1) + '_' + eventDate.getDate() + ' div');
+                eventDiv.addClass('payment event_popover');
+                eventDiv.find('a').attr('href', events[i].link);
+                eventDiv.find('a').attr('rel', 'popover');
+                eventDiv.find('a').attr('data-content', events[i].content);
+              } else {
 
-                if (events[i].date.split('/')[0] == year || events[i].date_to.split('/')[0] == year) {
+                if(!events[i].date_to) {
+                  events[i].date_to = events[i].date;
+                }
+
+                if (events[i].date.split(/\D/)[0] == year || events[i].date_to.split(/\D/)[0] == year) {
 
                   //create date object from dates
                   var oldSelectedDate = new Date(events[i].date);
@@ -396,44 +405,44 @@ $.fn.bic_calendar = function(options) {
                   }
                   //set first selection
                   while (oldSelectedDate <= newSelectedDate) {
-                      if(oldSelectedDate.toString() == new Date(events[i].date).toString()) {
+                    if(oldSelectedDate.toString() == new Date(events[i].date).toString()) {
 
-                        // Set first selection
-                        $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('event first-selection');
-                      } else if(oldSelectedDate.toString() == newSelectedDate.toString()) {
-                        // Set last selection
-                        $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('event last-selection');
-                      } else {
-                        //set middle-selection
-                        $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('event middle-selection');
-                      }
+                      // Set first selection
+                      $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('snapshot first-selection');
+                    } else if(oldSelectedDate.toString() == newSelectedDate.toString()) {
+                      // Set last selection
+                      $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('snapshot last-selection');
+                    } else {
+                      //set middle-selection
+                      $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div').addClass('snapshot middle-selection');
+                    }
 
-                      var loopDayDiv = $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div');
-                      var loopDayA = $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' a');
+                    var loopDayDiv = $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' div');
+                    var loopDayA = $('#bic_calendar_' + oldSelectedDate.getFullYear() + '_' + (parseInt(oldSelectedDate.getMonth()) + 1) + '_' + oldSelectedDate.getDate() + ' a');
 
-                      loopDayDiv.addClass('event');
+                    loopDayDiv.addClass('event');
 
+                    //bg color
+                    if (events[i].color) {
+                        var r = parseInt(events[i].color.slice(1,3), 16);
+                        var g = parseInt(events[i].color.slice(3,5), 16);
+                        var b = parseInt(events[i].color.slice(5,7), 16);
+                        loopDayDiv.css('background', `rgba(${r}, ${g}, ${b}, 0.5)`);
+                    }
+
+                    //link
+                    if (typeof events[i].link != 'undefined') {
+                        loopDayA.attr('href', events[i].link);
+                    }
+
+                    //class
+                    if (events[i].class)
+                        loopDayDiv.addClass(events[i].class);
+
+                    //tooltip vs popover
+                    if(!loopDayDiv.hasClass('event_popover') && !loopDayDiv.hasClass('event_tooltip')) {
                       loopDayA.attr('data-original-title', events[i].title);
 
-                      //bg color
-                      if (events[i].color) {
-                          var r = parseInt(events[i].color.slice(1,3), 16);
-                          var g = parseInt(events[i].color.slice(3,5), 16);
-                          var b = parseInt(events[i].color.slice(5,7), 16);
-                          console.log(`rgba(${r}, ${g}, ${b}, 0.5)`);
-                          loopDayDiv.css('background', `rgba(${r}, ${g}, ${b}, 0.5)`);
-                      }
-
-                      //link
-                      if (typeof events[i].link != 'undefined') {
-                          loopDayA.attr('href', events[i].link);
-                      }
-
-                      //class
-                      if (events[i].class)
-                          loopDayDiv.addClass(events[i].class);
-
-                      //tooltip vs popover
                       if (events[i].content) {
                           loopDayDiv.addClass('event_popover');
                           loopDayA.attr('rel', 'popover');
@@ -442,11 +451,12 @@ $.fn.bic_calendar = function(options) {
                           loopDayDiv.addClass('event_tooltip');
                           loopDayA.attr('rel', 'tooltip');
                       }
+                    }
 
-                      oldSelectedDate.setDate(oldSelectedDate.getDate() + 1);
-
+                    oldSelectedDate.setDate(oldSelectedDate.getDate() + 1);
                   }
                 }
+              }
             }
 
             $('#' + calendarId + ' ' + '.event_tooltip a').tooltip(tooltipOptions);
@@ -466,7 +476,7 @@ $.fn.bic_calendar = function(options) {
                 var eventBicCalendarSelect;
 
                 elem.on('click', '#monthsLayer td', function() {
-                    if(!$(this).find('div').hasClass('event')) {
+                    if(!$(this).find('div').hasClass('snapshot')) {
                       //if multiSelect
                       if (multiSelect == true) {
                           if (daySelected == '') {
@@ -491,11 +501,11 @@ $.fn.bic_calendar = function(options) {
                                   document.dispatchEvent(eventBicCalendarSelect);
                               } else {
                                   elem.find('.selection').removeClass('middle-selection selection first-selection last-selection');
-                                  markEvents(firstDaySelected.split('/')[0]);
+                                  markEvents(firstDaySelected.split(/\D/)[0]);
                                   firstDaySelected = '';
                                   lastDaySelected = '';
                                   daySelected = '';
-                                  $('#bic_calendar #new_event_pane').hide();
+                                  $('#new_snapshot_pane').hide();
                                   $('.bic_calendar a').css('cursor', 'pointer');
 
                               }
@@ -523,12 +533,12 @@ $.fn.bic_calendar = function(options) {
          */
         function markSelectedDays() {
             if (daySelected != '' && firstDaySelected == '') {
-                var arrayDate = daySelected.split('/');
+                var arrayDate = daySelected.split(/\D/);
                 $('#bic_calendar_' + arrayDate[0] + '_' + arrayDate[1] + '_' + arrayDate[2] + ' div').addClass('selection');
             } else if (firstDaySelected != '') {
                 //create array from dates
-                var arrayFirstDay = firstDaySelected.split('/');
-                var arrayLastDay = lastDaySelected.split('/');
+                var arrayFirstDay = firstDaySelected.split(/\D/);
+                var arrayLastDay = lastDaySelected.split(/\D/);
 
                 //remove all selected classes
                 elem.find('.selection').removeClass('selection');
@@ -551,7 +561,7 @@ $.fn.bic_calendar = function(options) {
                       (backwards && currDate >= lastSelectedDate)) {
                   addClass = "selection";
 
-                  if($('#bic_calendar_' + currDate.getFullYear() + '_' + (parseInt(currDate.getMonth()) + 1) + '_' + currDate.getDate() + ' div').hasClass('event')) {
+                  if($('#bic_calendar_' + currDate.getFullYear() + '_' + (parseInt(currDate.getMonth()) + 1) + '_' + currDate.getDate() + ' div').hasClass('snapshot')) {
                     if(!backwards) {
                       currDate.setDate(currDate.getDate() - 1);
                     } else {
@@ -595,15 +605,17 @@ $.fn.bic_calendar = function(options) {
                 $('#bic_calendar #monthsLayer a').css('cursor', 'default');
 
                 if(!backwards) {
-                  addNewEvent(firstSelectedDate, lastSelectedDate);
+                  addNewSnapshot(firstSelectedDate, lastSelectedDate);
                 } else {
-                  addNewEvent(lastSelectedDate, firstSelectedDate);
+                  addNewSnapshot(lastSelectedDate, firstSelectedDate);
                 }
             }
         }
 
-        function addNewEvent(date_from, date_to) {
-          $('#bic_calendar #new_event_pane').slideDown();
+        function addNewSnapshot(date_from, date_to) {
+          $('#new_snapshot_pane [id$="start_date"]').val(`${date_from.getFullYear()}-${date_from.getMonth()+1}-${date_from.getDate()}`);
+          $('#new_snapshot_pane [id$="end_date"]').val(`${date_to.getFullYear()}-${date_to.getMonth()+1}-${date_to.getDate()}`);
+          $('#new_snapshot_pane').slideDown();
         }
 
         /*** --functions-- ***/
